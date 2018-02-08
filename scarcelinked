@@ -68,7 +68,10 @@ def size_table(left, right, paths):
     return table
 
 
-def compare(left, right):
+def diff_tree(args):
+    left = build(args.left)
+    right = build(args.right)
+
     l = left.inode_sizes.keys()
     r = right.inode_sizes.keys()
 
@@ -77,14 +80,14 @@ def compare(left, right):
     r_only = r - l
 
     def f(label, x, inodes):
-        print('{label:6} {n:-5} files, {size:-10} bytes'.format(
-            label=label + ':',
+        print('{label:7} {n:-6} files, {size:-10} bytes'.format(
+            label=label,
             n=len(inodes),
             size=x.sum_inode_size(inodes)))
 
-    f('Common', left, both)
-    f('Left', left, l_only)
-    f('Right', right, r_only)
+    f('Common:', left, both)
+    f('Left:', left, l_only)
+    f('Right:', right, r_only)
 
     left_distinct_paths = {
         p
@@ -96,15 +99,14 @@ def compare(left, right):
     distinct = (
         left_distinct_paths & right.path_inodes.keys())
 
-    print('Only in Left:', len(left_paths_missing_in_right))
+    print('Only in {}: {}'.format(args.left, len(left_paths_missing_in_right)))
     print('Exist but different in both trees:', len(distinct))
+    print('Worst offenders:')
+    print('| {:100} | {:>9} | {:>9} | {:>9} |'.format('Path', 'Left', 'Right', 'Diff'))
+    print('| {:100} | {:>9} | {:>9} | {:>9} |'.format('----', '----', '-----', '----'))
     for path, s, t in size_table(left, right, distinct)[-25:]:
         print('| {:100} | {:-9} | {:-9} | {:-9} |'.format(
             path, s, t, abs(s - t)))
-
-
-def diff_tree(args):
-    compare(build(args.left), build(args.right))
 
 
 def diff_bytes(left, right):
