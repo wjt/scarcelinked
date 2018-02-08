@@ -5,18 +5,20 @@ Suppose you have two [Flatpak](https://flatpak.org/about.html) runtimes, `org.ex
 
 As you may have guessed from the name of this tool, this turned out not to be true in the case I was looking at, where Child was derived from a slightly older build of Base. Many files, including many multi-megabyte binaries, differed only in a handful of bytes, such as the `NT_GNU_BUILD_ID` string which is calculated from [many things in the build environment](https://blog.beuc.net/posts/Practical_basics_of_reproducible_builds/). The [Reproducible Builds](https://reproducible-builds.org/) people are shaking their heads in recognition.
 
-Anyway, you might want a tool to diff trees of files like this, and to compare files within them.
+Anyway, you might want a tool to diff trees of files like this, and to compare files within them. If so, this tool is great for the first use case, and acceptable for the second.
 
 Example
 -------
+
+Compare two hardlink trees:
 
 ```console
 $ scarcelinked tree \
 > /var/lib/flatpak/runtime/org.gnome.Platform/x86_64/3.26/active/files \
 > /var/lib/flatpak/runtime/com.endlessm.apps.Platform/x86_64/3/active/files
-Common: 20066 files,  491004054 bytes
-Left:    384 files,  145799433 bytes
-Right:  6328 files,  264950271 bytes
+Common:  20066 files,  491004054 bytes
+Left:      384 files,  145799433 bytes
+Right:    6328 files,  264950271 bytes
 Only in /var/lib/flatpak/runtime/org.gnome.Platform/x86_64/3.26/active/files: 7
 Exist but different in both trees: 382
 Worst offenders:
@@ -24,6 +26,11 @@ Worst offenders:
 | ----                                  |      ---- |     ----- |      ---- |
 | lib/gstreamer-1.0/libgstrtpmanager.so |    368752 |    368752 |         0 |
 [ 24 more rows omitted ]
+```
+
+Weird! There's 146MB of stuff not shared between parent and child runtime. Let's compare the contents of one file that differs (even though its size is identical):
+
+```console
 $ scarcelinked file \
 > /var/lib/flatpak/runtime/org.gnome.Platform/x86_64/3.26/active/files \
 > /var/lib/flatpak/runtime/com.endlessm.apps.Platform/x86_64/3/active/files
@@ -52,4 +59,6 @@ $ scarcelinked file \
  00059900  00 2e 64 61 74 61 00 2e  72 6f 64 61 74 61 00 2e  |..data..rodata..|
  00059910  73 68 73 74 72 74 61 62  00 2e 64 79 6e 61 6d 69  |shstrtab..dynami|
  00059920  63 00 2e 6e 6f 74 65 2e  67 6e 75 2e 62 75 69 6c  |c..note.gnu.buil|
+```
 
+If you feed these two files to [diffoscope](https://diffoscope.org/) you would learn that these differences are the `NT_GNU_BUILD_ID` (unique build ID bitstring) and some bytes in the `.gnu_debuglink` section.
