@@ -183,7 +183,8 @@ def main():
     Flatpak runtimes, to investigate whether as many files as you might hope
     are truly hardlinked together.'''
     p = argparse.ArgumentParser(description=main.__doc__)
-    sp = p.add_subparsers(title='subcommands')
+    sp = p.add_subparsers(title='subcommands', dest='subcommand')
+    sp.required = True
 
     dt = sp.add_parser('tree',
                        help='Compare the contents of two directory trees')
