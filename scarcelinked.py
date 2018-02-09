@@ -111,13 +111,15 @@ def diff_tree(args):
     print('Only in {}: {}'.format(args.left, len(left_paths_missing_in_right)))
     print('Exist but different in both trees:', len(distinct))
     print('Worst offenders:')
-    fmt = '| {:100} | {:>9} | {:>9} | {:>9} |'
-    print(fmt.format('Path', 'Left', 'Right', 'Diff'))
-    print(fmt.format('----', '----', '-----', '----'))
-    for path, s, t in size_table(left, right, distinct)[-25:]:
+    worst_offenders = size_table(left, right, distinct)[-25:]
+    path_width = max(len(path) for path, *rest in worst_offenders)
+    fmt = '| {:{}} | {:>9} | {:>9} | {:>9} |'
+    print(fmt.format('Path', path_width, 'Left', 'Right', 'Diff'))
+    print(fmt.format('----', path_width, '----', '-----', '----'))
+    for path, s, t in worst_offenders:
         diff = diff_files(os.path.join(args.left, path),
                           os.path.join(args.right, path))
-        print(fmt.format(path, s, t, diff.n_bytes))
+        print(fmt.format(path, path_width, s, t, diff.n_bytes))
 
 
 def diff_bytes(left, right):
