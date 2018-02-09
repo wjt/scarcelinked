@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# vim: tw=79
 '''
 Copyright © 2018 Endless Mobile, Inc.
 
@@ -166,7 +167,7 @@ def blockwise_diff(args):
     n = min(len(left), len(right))
     print('{} bytes ({:.4}%) differ'.format(d, 100 * d / n))
 
-    if d < 512:
+    if d <= args.diff_threshold:
         for i, k in diff:
             left_hexdump = hexdump_range(left_path, i, k)
             right_hexdump = hexdump_range(right_path, i, k)
@@ -197,6 +198,8 @@ def main():
                        epilog='This is very fast if left/path and right/path '
                               'are almost identical, and very slow if not.')
     bd.set_defaults(func=blockwise_diff)
+    bd.add_argument('--diff-threshold', metavar='T', type=int, default=512,
+                    help='if ≤ T bytes differ, print a diff (default: 512)')
     bd.add_argument('left', help='path to a directory')
     bd.add_argument('right', help='path to a directory')
     bd.add_argument('path', help='relative path to a file which exists in '
