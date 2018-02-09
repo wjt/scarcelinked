@@ -13,7 +13,7 @@ Example
 Compare two hardlink trees:
 
 ```console
-$ scarcelinked tree \
+$ ./scarcelinked.py tree \
 > /var/lib/flatpak/runtime/org.gnome.Platform/x86_64/3.26/active/files \
 > /var/lib/flatpak/runtime/com.endlessm.apps.Platform/x86_64/3/active/files
 Common:  20066 files,  491004054 bytes
@@ -22,20 +22,32 @@ Right:    6328 files,  264950271 bytes
 Only in /var/lib/flatpak/runtime/org.gnome.Platform/x86_64/3.26/active/files: 7
 Exist but different in both trees: 382
 Worst offenders:
-| Path                                  |      Left |     Right |      Diff |
-| ----                                  |      ---- |     ----- |      ---- |
-| lib/gstreamer-1.0/libgstrtpmanager.so |    368752 |    368752 |         0 |
-[ 24 more rows omitted ]
 ```
 
-Weird! There's 146MB of stuff not shared between parent and child runtime. Let's compare the contents of one file that differs (even though its size is identical):
+| Path                                        |      Left |     Right |      Diff |
+| ----                                        |      ---- |     ----- |      ---- |
+| lib/gstreamer-1.0/libgstrtpmanager.so       |    368752 |    368752 |        24 |
+| lib/libvte-2.91.so.0.5000.1                 |    374824 |    374824 |        24 |
+| lib/gstreamer-1.0/libgstcoreelements.so     |    381328 |    381328 |        23 |
+| lib/libgstgl-1.0.so.0.1203.0                |    387968 |    387968 |        24 |
+| lib/libgstbase-1.0.so.0.1203.0              |    407456 |    407456 |        24 |
+[ … 16 lines omitted … ]
+| lib/libgtk-3.so.0.2200.26                   |   7411328 |   7355560 |   6756349 |
+| lib/libjavascriptcoregtk-4.0.so.18.6.15     |  16955248 |  16955248 |     60402 |
+| libexec/webkit2gtk-4.0/WebKitPluginProcess2 |  38176776 |  38176776 |        24 |
+| lib/libwebkit2gtk-4.0.so.37.24.9            |  43571640 |  43571640 |      3523 |
+
+Weird! There's 146MB of stuff not shared between parent and child runtime, and many of those files are almost identical. Let's compare the contents of one file with identical size in both trees, which differs in only 24 bytes:
 
 ```console
-$ scarcelinked file \
+$ ./scarcelinked.py file \
 > /var/lib/flatpak/runtime/org.gnome.Platform/x86_64/3.26/active/files \
 > /var/lib/flatpak/runtime/com.endlessm.apps.Platform/x86_64/3/active/files
 > lib/gstreamer-1.0/libgstrtpmanager.so
 24 bytes (0.006508%) differ
+```
+
+```diff
 --- /var/lib/flatpak/runtime/org.gnome.Platform/x86_64/3.26/active/files/lib/gstreamer-1.0/libgstrtpmanager.so
 +++ /var/lib/flatpak/runtime/com.endlessm.apps.Platform/x86_64/3/active/files/lib/gstreamer-1.0/libgstrtpmanager.so
 @@ -27,7 +27,7 @@
