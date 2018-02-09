@@ -73,4 +73,4 @@ $ ./scarcelinked.py file \
  00059920  63 00 2e 6e 6f 74 65 2e  67 6e 75 2e 62 75 69 6c  |c..note.gnu.buil|
 ```
 
-If you feed these two files to [diffoscope](https://diffoscope.org/) you would learn that these differences are the `NT_GNU_BUILD_ID` (unique build ID bitstring) and some bytes in the `.gnu_debuglink` section.
+If you were to feed these two files to [diffoscope](https://diffoscope.org/) you would learn that these differences are the `NT_GNU_BUILD_ID` (unique build ID bitstring) and some bytes in the `.gnu_debuglink` section.
