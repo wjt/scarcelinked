@@ -39,6 +39,14 @@ class Contents(_Contents):
         return sum(self.inode_sizes[i] for i in inodes)
 
 
+# spans: [(int, int)]: a list of half-open intervals of bytes which differ. In
+#                      the case where one file is longer than the other, the
+#                      interval for the difference is included.
+# n_bytes: int: number of bytes which differ
+# pct: float: percentage of bytes which differ, relative to the larger file
+Diff = collections.namedtuple('Diff', ('spans', 'n_bytes', 'pct'))
+
+
 def build(root):
     c = Contents()
 
@@ -103,11 +111,11 @@ def diff_tree(args):
     print('Only in {}: {}'.format(args.left, len(left_paths_missing_in_right)))
     print('Exist but different in both trees:', len(distinct))
     print('Worst offenders:')
-    print('| {:100} | {:>9} | {:>9} | {:>9} |'.format('Path', 'Left', 'Right', 'Diff'))
-    print('| {:100} | {:>9} | {:>9} | {:>9} |'.format('----', '----', '-----', '----'))
+    fmt = '| {:100} | {:>9} | {:>9} | {:>9} |'
+    print(fmt.format('Path', 'Left', 'Right', 'Diff'))
+    print(fmt.format('----', '----', '-----', '----'))
     for path, s, t in size_table(left, right, distinct)[-25:]:
-        print('| {:100} | {:-9} | {:-9} | {:-9} |'.format(
-            path, s, t, abs(s - t)))
+        print(fmt.format(path, s, t, abs(s - t)))
 
 
 def diff_bytes(left, right):
@@ -136,6 +144,18 @@ def diff_bytes(left, right):
     return diff_span(0, n) + ([] if n == m else [(n, m)])
 
 
+def diff_files(left_path, right_path):
+    with open(left_path, 'rb') as f:
+        left = f.read()
+    with open(right_path, 'rb') as f:
+        right = f.read()
+
+    spans = diff_bytes(left, right)
+    n_bytes = sum(k - i for i, k in spans)
+    pct = 100 * n_bytes / max(len(left), len(right))
+    return Diff(spans, n_bytes, pct)
+
+
 def hexdump_range(path, i, k):
     start = 512 * math.floor(i / 512)
     end = 512 * math.ceil(k / 512)
@@ -154,21 +174,11 @@ def blockwise_diff(args):
     left_path = os.path.join(args.left, args.path)
     right_path = os.path.join(args.right, args.path)
 
-    with open(left_path, 'rb') as f:
-        left = f.read()
-    with open(right_path, 'rb') as f:
-        right = f.read()
+    diff = diff_files(left_path, right_path)
+    print('{} bytes ({:.4}%) differ'.format(diff.n_bytes, diff.pct))
 
-    d = 0
-    diff = diff_bytes(left, right)
-    for i, k in diff:
-        d += (k - i)
-
-    n = min(len(left), len(right))
-    print('{} bytes ({:.4}%) differ'.format(d, 100 * d / n))
-
-    if d <= args.diff_threshold:
-        for i, k in diff:
+    if diff.n_bytes <= args.diff_threshold:
+        for i, k in diff.spans:
             left_hexdump = hexdump_range(left_path, i, k)
             right_hexdump = hexdump_range(right_path, i, k)
             for line in difflib.unified_diff(left_hexdump.splitlines(),
