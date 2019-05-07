@@ -109,6 +109,9 @@ def diff_tree(args):
         left_distinct_paths & right.path_inodes.keys())
 
     print('Only in {}: {}'.format(args.left, len(left_paths_missing_in_right)))
+    if args.list_unique:
+        for path in sorted(left_paths_missing_in_right):
+            print('- {}'.format(path))
     print('Exist but different in both trees:', len(distinct))
     print('Worst offenders:')
     worst_offenders = size_table(left, right, distinct)[-25:]
@@ -204,6 +207,8 @@ def main():
     dt = sp.add_parser('tree',
                        help='Compare the contents of two directory trees')
     dt.set_defaults(func=diff_tree)
+    dt.add_argument('--list-unique', action='store_true',
+                    help="List files which are only in left")
     dt.add_argument('left', help='path to a directory')
     dt.add_argument('right', help='path to a directory')
 
